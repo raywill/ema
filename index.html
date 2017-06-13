@@ -1,0 +1,131 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>EMA</title>
+<style>
+    body { background-color:yellow;}
+    #c1 { background-color: white; }
+</style>
+<script>
+window.onload = function() {
+  var width = 1800;
+  var height = 800;
+　　var oC = document.getElementById('c1');
+　　var oCG = oC.getContext('2d');
+    for (var x = 0; x < width; x+= 100) {
+        oCG.fillText(x, x+3, 10);
+        oCG.moveTo(x, 0);
+        oCG.lineTo(x,height);
+        oCG.stroke();
+    }
+    for (var y = 0; y < height; y+= 100) {
+        oCG.fillText(y, 3, y+10);
+        oCG.moveTo(0, y);
+        oCG.lineTo(width,y);
+        oCG.stroke();
+    }
+    function windowToCanvas (canvas, x, y) {
+      var bbox = canvas.getBoundingClientRect();
+      return {
+        x : (x - bbox.left) * (canvas.width / bbox.width),
+        y : (y - bbox.top) * (canvas.height / bbox.height)
+        };
+      }
+　　oC.onmousedown = function(ev) {
+    var ev = ev || window.event;
+    oCG.strokeStyle="black";
+    oCG.beginPath();
+    var p = windowToCanvas(oC, ev.clientX, ev.clientY);
+    //oCG.moveTo(ev.clientX-oC.offsetLeft,ev.clientY-oC.offsetTop); //ev.clientX-oC.offsetLeft,ev.clientY-oC.offsetTop鼠标在当前画布上X,Y坐标
+    oCG.moveTo(p.x, p.y); //ev.clientX-oC.offsetLeft,ev.clientY-oC.offsetTop鼠标在当前画布上X,Y坐标
+    var queue = [];
+    document.onmousemove = function(ev) {
+      var ev = ev || window.event;//获取event对象
+      var p = windowToCanvas(oC, ev.clientX, ev.clientY);
+      queue[p.x] = p.y;
+      oCG.lineTo(p.x,p.y);
+      oCG.stroke();
+    };
+    oC.onmouseup = function() {
+        document.onmousemove = null;
+        document.onmouseup = null;
+        // 补充数据
+        queue[0] = 0;
+        for (var i = 1; i < width; ++i) {
+          if (queue[i] == undefined)
+            queue[i] = queue[i-1];
+        }
+        // 计算 ema，划线
+        console.log(queue);
+        var ema = [];
+        var sample_window = parseInt(document.getElementById("sample_window").value) || 100;
+        var samples = [];
+        var alpha = parseInt(document.getElementById("alpha").value) || 0.6321; // 1 day
+        console.log("sample_win", sample_window, "alpha", alpha);
+
+        alpha = 0.2212; // 4 day
+        alpha = 0.2834; // 3 day
+        alpha = 0.3934; // 2 day
+        alpha = 0.6321; // 1 day
+        //alpha = 0.001;
+        //alpha = 0.033;
+
+        var steps = Math.floor(width / sample_window);
+
+        for (var p = 0; p < steps; p++) {
+          samples[p] = 0;
+          for (var i = p * sample_window; i < (p + 1) * sample_window; ++i) {
+            samples[p] += queue[i];
+            console.log('add sample', oC.offsetTop);
+          }
+        }
+        for (var p = 0; p < steps; p++) {
+            samples[p] /= sample_window;
+        }
+
+        console.log(samples);
+
+        ema[0] = samples[0];
+        for (var i = 1; i < steps; ++i) {
+            ema[i] = alpha * samples[i] + (1 - alpha) * ema[i-1];
+        }
+
+        var points = [];
+
+        for (var v = 0; v < steps; v++) {
+          points.push({ x: Math.floor((v + 0.5) * sample_window), y: ema[v]}); 
+        }
+
+        console.log(ema);
+        console.log(points);
+        var ctrlPoint={x:0,y:0};  
+        oCG.strokeStyle="red";
+        oCG.beginPath();
+        oCG.moveTo(points[0].x, points[0].y);
+        for (var n = 1; n < steps - 1; n++) {
+          ctrlPoint.x = (points[n+1].x + points[n].x)/2;
+          ctrlPoint.y = (points[n+1].y + points[n].y)/2;
+          oCG.quadraticCurveTo(points[n].x, points[n].y, ctrlPoint.x,ctrlPoint.y);  
+        }
+        oCG.stroke();
+        oCG.closePath();
+
+        };
+　　　　};
+};
+</script>
+</head>
+ 
+<body>
+  <h1>EMA 动态计算平台</h1>
+  ALPHA: <input id="alpha" value="0.2" />
+  SAMPLE WIN: <input id="sample_window" value="100" />
+  <input type="submit" name="reset" value="重置" onclick="window.location.reload()" />
+  <br /> 
+  <br /> 
+    <canvas id="c1" width="1600px" height="800px"> <!--宽高写在html里，写在css里有问题-->
+        <span>该浏览器不支持canvas内容</span> <!--对于不支持canvas的浏览器显示-->
+    </canvas>
+</body>
+</html>
