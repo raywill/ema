@@ -35,6 +35,7 @@ window.onload = function() {
 　　oC.onmousedown = function(ev) {
     var ev = ev || window.event;
     oCG.strokeStyle="black";
+    oCG.lineWidth = 2;
     oCG.beginPath();
     var p = windowToCanvas(oC, ev.clientX, ev.clientY);
     //oCG.moveTo(ev.clientX-oC.offsetLeft,ev.clientY-oC.offsetTop); //ev.clientX-oC.offsetLeft,ev.clientY-oC.offsetTop鼠标在当前画布上X,Y坐标
@@ -99,8 +100,11 @@ window.onload = function() {
 
         console.log(ema);
         console.log(points);
-        var ctrlPoint={x:0,y:0};  
-        oCG.strokeStyle="red";
+        var ctrlPoint={x:0,y:0};
+        var colors = ['yellow', 'blue', 'green', 'red', 'aqua', 'fuchsia', 'maroon', 'red', 'purple'];
+        var index = Math.floor(Math.random() * colors.length);
+        oCG.strokeStyle= colors[index];//."red";
+        oCG.lineWidth = 3;
         oCG.beginPath();
         oCG.moveTo(points[0].x, points[0].y);
         for (var n = 1; n < steps - 1; n++) {
@@ -119,6 +123,8 @@ window.onload = function() {
  
 <body>
   <h1>EMA 动态计算平台</h1>
+
+  <p>Usage: Draw your curve using mouse. EMA curve result will show up after mouse up. You can draw multiple curves with different parameters.</p>
   ALPHA (0~1) : <input id="alpha" value="0.2" />
   SAMPLE WIN (1~400) : <input id="sample_window" value="20" />
   <input type="submit" name="reset" value="重置" onclick="window.location.reload()" />
